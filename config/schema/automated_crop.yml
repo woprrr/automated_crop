@@ -1,0 +1,25 @@
+image.effect.automated_crop:
+  type: mapping
+  label: 'Automated Crop effect configuration'
+  mapping:
+    width:
+      label: 'Width'
+      type: integer
+    height:
+      label: 'Height'
+      type: integer
+    min_width:
+      label: 'Min Width'
+      type: integer
+    min_height:
+      label: 'Min Height'
+      type: integer
+    max_width:
+      label: 'Max Width'
+      type: integer
+    max_height:
+      label: 'Max Height'
+      type: integer
+    aspect_ratio:
+      label: 'Aspect Ratio'
+      type: string

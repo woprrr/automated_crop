@@ -1,0 +1,4 @@
+services:
+  automated_crop.manager:
+    class: Drupal\automated_crop\AutomatedCropManager
+    arguments: ['@entity_type.manager']

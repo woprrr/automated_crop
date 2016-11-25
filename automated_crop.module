@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * @file
+ * The Automated Crop Drupal module.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function automated_crop_theme() {
+  return [
+    'automated_crop_summary' => [
+      'variables' => ['data' => [], 'effect' => []],
+    ],
+  ];
+}
+
+/**
+ * Prepares variables for automated_crop summary template.
+ *
+ * Default template: automated-crop-summary.twig.html.
+ */
+function template_preprocess_automated_crop_summary(&$variables) {
+  if (!empty($variables['data']['automated_crop'])) {
+    $type = \Drupal::entityTypeManager()
+      ->getStorage('crop_type')
+      ->load($variables['data']['crop_type']);
+    $variables['data']['automated_crop'] = $type->label();
+  }
+}

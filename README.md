@@ -1,1 +1,3 @@
-# automated_crop
+# Automated Crop module
+
+do something...
