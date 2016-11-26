@@ -130,9 +130,6 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
       '#default_value' => $this->configuration['width'],
       '#field_suffix' => ' ' . $this->t('pixels'),
       '#description' => $this->t("If your sizes W + H not respect original aspect ratio, the system adapt it to ensure you don't deform image."),
-      // @TODO delete this whenever aspect_ratio option are enable.
-      '#required' => TRUE,
-      '#min' => 1,
     );
     $form['height'] = array(
       '#type' => 'number',
@@ -140,9 +137,6 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
       '#default_value' => $this->configuration['height'],
       '#field_suffix' => ' ' . $this->t('pixels'),
       '#description' => $this->t("If your sizes W + H not respect original aspect ratio, the system adapt it to ensure you don't deform image."),
-      // @TODO delete this whenever aspect_ratio option are enable.
-      '#required' => TRUE,
-      '#min' => 1,
     );
 
     // @TODO Not sure that is expected by users...
@@ -190,13 +184,13 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
 //    ];
 
     // That can be used in case when user not define any width / height but just need to crop onto 4:3 an 16:9 area.
-//    $form['aspect_ratio'] = [
-//      '#title' => t('Aspect Ratio'),
-//      '#type' => 'textfield',
-//      '#default_value' => $this->configuration['aspect_ratio'],
-//      '#attributes' => ['placeholder' => 'W:H'],
-//      '#description' => t('Set an aspect ratio <b>eg: 16:9</b> or leave this empty for arbitrary aspect ratio'),
-//    ];
+    $form['aspect_ratio'] = [
+      '#title' => t('Aspect Ratio'),
+      '#type' => 'textfield',
+      '#default_value' => $this->configuration['aspect_ratio'],
+      '#attributes' => ['placeholder' => 'W:H'],
+      '#description' => t('Set an aspect ratio <b>eg: 16:9</b> or leave this empty for arbitrary aspect ratio'),
+    ];
 
     return $form;
   }
@@ -212,7 +206,7 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
 //    $this->configuration['min_height'] = $form_state->getValue('min_height');
 //    $this->configuration['max_width'] = $form_state->getValue('max_width');
 //    $this->configuration['max_height'] = $form_state->getValue('max_height');
-//    $this->configuration['aspect_ratio'] = $form_state->getValue('aspect_ratio');
+    $this->configuration['aspect_ratio'] = $form_state->getValue('aspect_ratio');
   }
 
   /**

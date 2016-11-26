@@ -21,7 +21,9 @@ class AutomatedCropFactory implements AutomatedCropInterface{
     'width' => NULL,
     'height' => NULL,
     'min_width' => NULL,
-    'min_height' => NULL
+    'min_height' => NULL,
+    'max_width' => NULL,
+    'max_height' => NULL
   ];
 
   protected $originalImageSizes;
@@ -59,7 +61,7 @@ class AutomatedCropFactory implements AutomatedCropInterface{
   public function initCropBox(ImageInterface $image, array $sizes, $aspect_ratio = 'NaN') {
     $this->setImageToCrop($image);
     $this->setOriginalImageSizes();
-    $this->setCropBoxSizes($sizes);
+    $this->setCropBoxValues($sizes);
     $this->setAspectRatio($aspect_ratio);
     return $this;
   }
@@ -79,10 +81,12 @@ class AutomatedCropFactory implements AutomatedCropInterface{
     return $this;
   }
 
-  protected function setCropBoxSizes(array $sizes) {
+  protected function setCropBoxValues(array $sizes) {
     foreach ($sizes as $element => $value) {
-      // @TODO need to fire an exception if element are not available.
+      // @TODO throw an exception if element are not available.
+      if (array_key_exists($element, $this->cropBox)) {
         $this->cropBox["$element"] = (int) $value;
+      }
     }
     return $this;
   }
@@ -90,43 +94,49 @@ class AutomatedCropFactory implements AutomatedCropInterface{
   /**
    * Calculate aspect ratio of CropBox area or define new.
    *
-   * @param string|NULL $aspect_ratio
+   * @param string $aspect_ratio
    *   The enforced aspect ratio to applie on CropBox or "NaN" to save original cropBox ratio.
    *
    * @return integer|null
    *  Aspect ratio calculated to apply on area sizes.
    */
-  protected function setAspectRatio($aspect_ratio) {
-    if ($aspect_ratio != 'NaN' && (empty($this->originalImageSizes['width']) && empty($this->originalImageSizes['height']))) {
-      $aspect_option = explode(':', $aspect_ratio);
-      if (!empty($aspect_option) && (is_int($aspect_option['0']) && is_int($aspect_option['1']))) {
-        $this->aspectRatio = (int) $aspect_option['0'] / (int) $aspect_option['1'];
-      }
+  protected function setAspectRatio($aspect_ratio = 'NaN') {
+    // If Aspect ratio is enforced and match with format W:H.
+    if ($aspect_ratio != 'NaN' && preg_match('/^\d{1,3}+:\d{1,3}+$/', $aspect_ratio)) {
+      $this->aspectRatio = $aspect_ratio;
+    } else {
+      $gcd = $this->calculateGCD($this->originalImageSizes['width'], $this->originalImageSizes['height']);
+      $this->aspectRatio = round($this->originalImageSizes['width'] / $gcd) . ':' . round($this->originalImageSizes['height'] / $gcd);
     }
-
-    $this->aspectRatio = $this->originalImageSizes['width'] / $this->originalImageSizes['height'];
   }
 
+  public function hasSizes() {
+    return (!empty($this->cropBox['width']) && !empty($this->cropBox['height'])) ? TRUE : FALSE;
+  }
+
+  // @TODO Possibly change that to setter, it's not role to getter to calculates...
   public function getCropArea() {
-    $aspect_ratio = $this->aspectRatio;
-    if ($aspect_ratio) {
-      if ($this->originalImageSizes['height'] * $aspect_ratio > $this->originalImageSizes['width']) {
-        $this->cropBox['height'] = $this->cropBox['width'] / $aspect_ratio;
-      }
-      else {
-        $this->cropBox['width'] = $this->cropBox['height'] * $aspect_ratio;
+    // If we not have sizes (w or h) and aspect ratio are enforced.
+    if (!$this->hasSizes() && $ratio = explode(':', $this->getAspectRatio())) {
+      if (!empty($this->cropBox['width'])) {
+        $this->cropBox['height'] = ($this->cropBox['width'] * $ratio['1']) / $ratio['0'];
+      } elseif (!empty($this->cropBox['height'])) {
+        $this->cropBox['width'] = ($this->cropBox['height'] * $ratio['0']) / $ratio['1'];
+      } else {
+        // If we need to not enforces size but just crop on another aspect ratio on original image.
+        $this->cropBox['width'] = $this->originalImageSizes['width'];
+        $this->cropBox['height'] = ($this->cropBox['width'] * $ratio['1']) / $ratio['0'];
       }
     }
 
     // Initialize auto crop area & unsure we can't override original image sizes.
-    // @TODO we can change $original_w by max_w by example if we need...
-    $crop_box['width'] = min(max($this->cropBox['width'], $this->cropBox['min_width']), $this->originalImageSizes['width']);
-    $crop_box['height'] = min(max($this->cropBox['height'], $this->cropBox['min_height']), $this->originalImageSizes['height']);
+    $this->cropBox['width'] = min(max($this->cropBox['width'], $this->cropBox['min_width']), $this->originalImageSizes['width']);
+    $this->cropBox['height'] = min(max($this->cropBox['height'], $this->cropBox['min_height']), $this->originalImageSizes['height']);
 
     // The width & height of auto crop area must large than min sizes.
     return [
-      'height' => round(max($this->cropBox['min_width'], $this->cropBox['width'] * $this->autoCropArea)),
-      'width' => round(max($this->cropBox['min_height'], $this->cropBox['height'] * $this->autoCropArea))
+      'width' => round(max($this->cropBox['min_width'], $this->cropBox['width'] * $this->autoCropArea)),
+      'height' => round(max($this->cropBox['min_height'], $this->cropBox['height'] * $this->autoCropArea))
     ];
   }
 
@@ -139,6 +149,37 @@ class AutomatedCropFactory implements AutomatedCropInterface{
       'x' => ($this->originalImageSizes['width'] / 2) - ($this->cropBox['width'] / 2),
       'y' => ($this->originalImageSizes['height'] / 2) - ($this->cropBox['height'] / 2)
     ];
+  }
+
+  /**
+   * Calculate the greatest common denominator of two numbers.
+   *
+   * @param int $a
+   *   First number to check.
+   * @param int $b
+   *   Second number to check.
+   *
+   * @return integer|null
+   *  Greatest common denominator of $a and $b.
+   */
+  private static function calculateGCD($a, $b) {
+    if (extension_loaded('gmp_gcd')) {
+      $gcd = gmp_intval(gmp_gcd($a, $b));
+    }
+    else {
+      if ($b > $a) {
+        $gcd = self::calculateGCD($b, $a);
+      }
+      else {
+        while ($b > 0) {
+          $t = $b;
+          $b = $a % $b;
+          $a = $t;
+        }
+        $gcd = $a;
+      }
+    }
+    return $gcd;
   }
 
 }
