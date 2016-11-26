@@ -2,7 +2,7 @@
 
 namespace Drupal\automated_crop\Plugin\ImageEffect;
 
-use Drupal\automated_crop\AutomatedCropManager;
+use Drupal\automated_crop\AutomatedCropFactory;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Image\ImageInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Image\ImageFactory;
 
 /**
- * Provide an Automatic crop tools fallback to crop api.
+ * Provide an Automatic crop tools.
  *
  * @ImageEffect(
  *   id = "automated_crop",
@@ -23,18 +23,18 @@ use Drupal\Core\Image\ImageFactory;
 class AutomatedCropEffect extends ConfigurableImageEffectBase implements ContainerFactoryPluginInterface {
 
   /**
-   * AutomatedCrop services.
+   * AutomatedCrop object.
    *
-   * @var \Drupal\automated_crop\AutomatedCropManager
+   * @var \Drupal\automated_crop\AutomatedCropFactory
    */
-  protected $automatedCropManager;
+  protected $automatedCropFactory;
 
   /**
-   * Crop coordinates.
+   * Automated crop object loaded with current image.
    *
-   * @var array
+   * @var \Drupal\automated_crop\AutomatedCropFactory
    */
-  protected $cropCoordinates;
+  protected $automatedCrop;
 
   /**
   * The image factory service.
@@ -46,9 +46,9 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerInterface $logger, AutomatedCropManager $automated_crop_services, ImageFactory $image_factory) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerInterface $logger, AutomatedCropFactory $automated_crop_services, ImageFactory $image_factory) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $logger);
-    $this->automatedCropManager = $automated_crop_services;
+    $this->automatedCropFactory = $automated_crop_services;
     $this->imageFactory = $image_factory;
   }
 
@@ -61,7 +61,7 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
       $plugin_id,
       $plugin_definition,
       $container->get('logger.factory')->get('image'),
-      $container->get('automated_crop.manager'),
+      $container->get('automated_crop.factory'),
       $container->get('image.factory')
     );
   }
@@ -70,8 +70,11 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
    * {@inheritdoc}
    */
   public function applyEffect(ImageInterface $image) {
+    /** @var \Drupal\automated_crop\AutomatedCropFactory $crop */
     if ($crop = $this->getAutomatedCrop($image)) {
-      if (!$image->crop($crop['x'], $crop['y'], $crop['width'], $crop['height'])) {
+      $sizes = $crop->getCropArea();
+      $anchor = $crop->getAnchor();
+      if (!$image->crop($anchor['x'], $anchor['y'], $sizes['width'], $sizes['height'])) {
         $this->logger->error('Automated image crop failed using the %toolkit toolkit on %path (%mimetype, %width x %height)', [
             '%toolkit' => $image->getToolkitId(),
             '%path' => $image->getSource(),
@@ -120,11 +123,13 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
 
+    // @TODO prevent user if the entered values break aspect ratio of original image or use Scale & crop to hard crop...
     $form['width'] = array(
       '#type' => 'number',
       '#title' => t('Width'),
       '#default_value' => $this->configuration['width'],
-      '#field_suffix' => ' ' . t('pixels'),
+      '#field_suffix' => ' ' . $this->t('pixels'),
+      '#description' => $this->t("If your sizes W + H not respect original aspect ratio, the system adapt it to ensure you don't deform image."),
       // @TODO delete this whenever aspect_ratio option are enable.
       '#required' => TRUE,
       '#min' => 1,
@@ -133,7 +138,8 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
       '#type' => 'number',
       '#title' => t('Height'),
       '#default_value' => $this->configuration['height'],
-      '#field_suffix' => ' ' . t('pixels'),
+      '#field_suffix' => ' ' . $this->t('pixels'),
+      '#description' => $this->t("If your sizes W + H not respect original aspect ratio, the system adapt it to ensure you don't deform image."),
       // @TODO delete this whenever aspect_ratio option are enable.
       '#required' => TRUE,
       '#min' => 1,
@@ -215,26 +221,24 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
    * @param ImageInterface $image
    *   Image object.
    *
-   * @return array|FALSE
+   * @return \Drupal\automated_crop\AutomatedCropFactory|FALSE
    *   Crop coordinates onto original image.
    */
   protected function getAutomatedCrop(ImageInterface $image) {
     if (!isset($this->cropCoordinates)) {
-      $this->cropCoordinates = FALSE;
-      if ($crop_coordinates = $this->automatedCropManager->applyAutomatedCrop($image, [
+      $this->automatedCrop = FALSE;
+      if ($crop_coordinates = $this->automatedCropFactory->initCropBox($image, [
         'width' => $this->configuration['width'],
         'height' => $this->configuration['height'],
         'min_width' => $this->configuration['min_width'],
-        'min_height' => $this->configuration['min_height'],
-        'max_width' => $this->configuration['max_width'],
-        'max_height' => $this->configuration['max_height']
+        'min_height' => $this->configuration['min_height']
       ], $this->configuration['aspect_ratio'])
       ) {
-        $this->cropCoordinates = $crop_coordinates;
+        $this->automatedCrop = $crop_coordinates;
       }
     }
 
-    return $this->cropCoordinates;
+    return $this->automatedCrop;
   }
 
   /**
@@ -244,12 +248,11 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
     /** @var \Drupal\Core\Image\Image $image */
     $image = $this->imageFactory->get($uri);
 
-    /** @var \Drupal\crop\CropInterface $crop */
-    $crop = $this->getAutomatedCrop($image);
+    $sizes = $this->getAutomatedCrop($image)->getCropArea();
 
     // The new image will have the exact dimensions defined by effect.
-    $dimensions['width'] = $crop['width'];
-    $dimensions['height'] = $crop['height'];
+    $dimensions['width'] = $sizes['width'];
+    $dimensions['height'] = $sizes['height'];
   }
 
 }

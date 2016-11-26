@@ -1,4 +1,4 @@
 services:
-  automated_crop.manager:
-    class: Drupal\automated_crop\AutomatedCropManager
+  automated_crop.factory:
+    class: Drupal\automated_crop\AutomatedCropFactory
     arguments: ['@entity_type.manager']
