@@ -37,10 +37,10 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
   protected $automatedCrop;
 
   /**
-  * The image factory service.
-  *
-  * @var \Drupal\Core\Image\ImageFactory
-  */
+   * The image factory service.
+   *
+   * @var \Drupal\Core\Image\ImageFactory
+   */
   protected $imageFactory;
 
   /**
@@ -72,16 +72,16 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
   public function applyEffect(ImageInterface $image) {
     /** @var \Drupal\automated_crop\AutomatedCropFactory $crop */
     if ($crop = $this->getAutomatedCrop($image)) {
-      $sizes = $crop->getCropArea();
+      $sizes = $crop->getCropBoxSizes();
       $anchor = $crop->getAnchor();
       if (!$image->crop($anchor['x'], $anchor['y'], $sizes['width'], $sizes['height'])) {
         $this->logger->error('Automated image crop failed using the %toolkit toolkit on %path (%mimetype, %width x %height)', [
-            '%toolkit' => $image->getToolkitId(),
-            '%path' => $image->getSource(),
-            '%mimetype' => $image->getMimeType(),
-            '%width' => $image->getWidth(),
-            '%height' => $image->getHeight(),
-          ]
+          '%toolkit' => $image->getToolkitId(),
+          '%path' => $image->getSource(),
+          '%mimetype' => $image->getMimeType(),
+          '%width' => $image->getWidth(),
+          '%height' => $image->getHeight(),
+        ]
         );
         return FALSE;
       }
@@ -123,7 +123,6 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
 
-    // @TODO prevent user if the entered values break aspect ratio of original image or use Scale & crop to hard crop...
     $form['width'] = array(
       '#type' => 'number',
       '#title' => t('Width'),
@@ -139,51 +138,48 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
       '#description' => $this->t("If your sizes W + H not respect original aspect ratio, the system adapt it to ensure you don't deform image."),
     );
 
-    // @TODO Not sure that is expected by users...
-//    $form['min_sizes'] = [
-//      '#type' => 'details',
-//      '#title' => $this->t('Min sizes limits'),
-//      '#description' => $this->t('Define crop size minimum limit.'),
-//      '#open' => FALSE,
-//    ];
-//
-//    $form['min_sizes']['min_width'] = [
-//      '#type' => 'number',
-//      '#title' => t('Min Width'),
-//      '#default_value' => $this->configuration['min_width'],
-//      '#field_suffix' => ' ' . t('pixels'),
-//    ];
-//
-//    $form['min_sizes']['min_height'] = [
-//      '#type' => 'number',
-//      '#title' => t('Min Height'),
-//      '#default_value' => $this->configuration['min_height'],
-//      '#field_suffix' => ' ' . t('pixels'),
-//    ];
+    $form['min_sizes'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Min sizes limits'),
+      '#description' => $this->t('Define crop size minimum limit.'),
+      '#open' => FALSE,
+    ];
 
-    // @TODO Not sure that is expected by users...
-//    $form['max_sizes'] = [
-//      '#type' => 'details',
-//      '#title' => $this->t('Max sizes limits'),
-//      '#description' => $this->t('Define crop size maximum limit.'),
-//      '#open' => FALSE,
-//    ];
-//
-//    $form['max_sizes']['max_width'] = [
-//      '#type' => 'number',
-//      '#title' => t('Max Width'),
-//      '#default_value' => $this->configuration['max_width'],
-//      '#field_suffix' => ' ' . t('pixels'),
-//    ];
-//
-//    $form['max_sizes']['max_height'] = [
-//      '#type' => 'number',
-//      '#title' => t('Max Height'),
-//      '#default_value' => $this->configuration['max_height'],
-//      '#field_suffix' => ' ' . t('pixels'),
-//    ];
+    $form['min_sizes']['min_width'] = [
+      '#type' => 'number',
+      '#title' => t('Min Width'),
+      '#default_value' => $this->configuration['min_width'],
+      '#field_suffix' => ' ' . t('pixels'),
+    ];
 
-    // That can be used in case when user not define any width / height but just need to crop onto 4:3 an 16:9 area.
+    $form['min_sizes']['min_height'] = [
+      '#type' => 'number',
+      '#title' => t('Min Height'),
+      '#default_value' => $this->configuration['min_height'],
+      '#field_suffix' => ' ' . t('pixels'),
+    ];
+
+    $form['max_sizes'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Max sizes limits'),
+      '#description' => $this->t('Define crop size maximum limit.'),
+      '#open' => FALSE,
+    ];
+
+    $form['max_sizes']['max_width'] = [
+      '#type' => 'number',
+      '#title' => t('Max Width'),
+      '#default_value' => $this->configuration['max_width'],
+      '#field_suffix' => ' ' . t('pixels'),
+    ];
+
+    $form['max_sizes']['max_height'] = [
+      '#type' => 'number',
+      '#title' => t('Max Height'),
+      '#default_value' => $this->configuration['max_height'],
+      '#field_suffix' => ' ' . t('pixels'),
+    ];
+
     $form['aspect_ratio'] = [
       '#title' => t('Aspect Ratio'),
       '#type' => 'textfield',
@@ -198,14 +194,23 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
   /**
    * {@inheritdoc}
    */
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
+    if (!empty($form_state->getValue('aspect_ratio')) && !preg_match(AutomatedCropFactory::ASPECT_RATIO_FORMAT_REGEXP, $form_state->getValue('aspect_ratio'))) {
+      $form_state->setError($form['aspect_ratio'], $form['aspect_ratio']['#title'] . ': ' . $this->t('Invalid aspect ratio format. Should be defined in H:W form.'));
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     parent::submitConfigurationForm($form, $form_state);
     $this->configuration['width'] = $form_state->getValue('width');
     $this->configuration['height'] = $form_state->getValue('height');
-//    $this->configuration['min_width'] = $form_state->getValue('min_width');
-//    $this->configuration['min_height'] = $form_state->getValue('min_height');
-//    $this->configuration['max_width'] = $form_state->getValue('max_width');
-//    $this->configuration['max_height'] = $form_state->getValue('max_height');
+    $this->configuration['min_width'] = $form_state->getValue('min_width');
+    $this->configuration['min_height'] = $form_state->getValue('min_height');
+    $this->configuration['max_width'] = $form_state->getValue('max_width');
+    $this->configuration['max_height'] = $form_state->getValue('max_height');
     $this->configuration['aspect_ratio'] = $form_state->getValue('aspect_ratio');
   }
 
@@ -215,7 +220,7 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
    * @param ImageInterface $image
    *   Image object.
    *
-   * @return \Drupal\automated_crop\AutomatedCropFactory|FALSE
+   * @return \Drupal\automated_crop\AutomatedCropFactory|false
    *   Crop coordinates onto original image.
    */
   protected function getAutomatedCrop(ImageInterface $image) {
@@ -225,7 +230,9 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
         'width' => $this->configuration['width'],
         'height' => $this->configuration['height'],
         'min_width' => $this->configuration['min_width'],
-        'min_height' => $this->configuration['min_height']
+        'min_height' => $this->configuration['min_height'],
+        'max_width' => $this->configuration['max_width'],
+        'max_height' => $this->configuration['max_height'],
       ], $this->configuration['aspect_ratio'])
       ) {
         $this->automatedCrop = $crop_coordinates;
@@ -242,7 +249,7 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
     /** @var \Drupal\Core\Image\Image $image */
     $image = $this->imageFactory->get($uri);
 
-    $sizes = $this->getAutomatedCrop($image)->getCropArea();
+    $sizes = $this->getAutomatedCrop($image)->getCropBoxSizes();
 
     // The new image will have the exact dimensions defined by effect.
     $dimensions['width'] = $sizes['width'];

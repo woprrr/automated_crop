@@ -49,7 +49,11 @@ class AutomatedCropFunctionalTest extends WebTestBase {
     $this->testStyle->save();
   }
 
+  /**
+   * Initialization of TESTS ...
+   */
   public function testNothing() {
-    return $this->assertTrue(true, t('ok useless but necessary :P'));
+    return $this->assertTrue(TRUE, t('ok useless but necessary :P'));
   }
+
 }
