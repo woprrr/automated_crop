@@ -1,6 +1,6 @@
 {
   "name": "drupal/automated_crop",
-  "description": "Provides automated crop api integration.",
+  "description": "Provides automated cropping tools API.",
   "type": "drupal-module",
   "homepage": "https://www.drupal.org/project/automated_crop",
   "support": {

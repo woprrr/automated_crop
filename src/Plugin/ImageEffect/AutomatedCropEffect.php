@@ -125,14 +125,14 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
 
     $form['width'] = array(
       '#type' => 'number',
-      '#title' => t('Width'),
+      '#title' => $this->t('Width'),
       '#default_value' => $this->configuration['width'],
       '#field_suffix' => ' ' . $this->t('pixels'),
       '#description' => $this->t("If your sizes W + H not respect original aspect ratio, the system adapt it to ensure you don't deform image."),
     );
     $form['height'] = array(
       '#type' => 'number',
-      '#title' => t('Height'),
+      '#title' => $this->t('Height'),
       '#default_value' => $this->configuration['height'],
       '#field_suffix' => ' ' . $this->t('pixels'),
       '#description' => $this->t("If your sizes W + H not respect original aspect ratio, the system adapt it to ensure you don't deform image."),
@@ -147,16 +147,16 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
 
     $form['min_sizes']['min_width'] = [
       '#type' => 'number',
-      '#title' => t('Min Width'),
+      '#title' => $this->t('Min Width'),
       '#default_value' => $this->configuration['min_width'],
-      '#field_suffix' => ' ' . t('pixels'),
+      '#field_suffix' => ' ' . $this->t('pixels'),
     ];
 
     $form['min_sizes']['min_height'] = [
       '#type' => 'number',
-      '#title' => t('Min Height'),
+      '#title' => $this->t('Min Height'),
       '#default_value' => $this->configuration['min_height'],
-      '#field_suffix' => ' ' . t('pixels'),
+      '#field_suffix' => ' ' . $this->t('pixels'),
     ];
 
     $form['max_sizes'] = [
@@ -168,24 +168,24 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
 
     $form['max_sizes']['max_width'] = [
       '#type' => 'number',
-      '#title' => t('Max Width'),
+      '#title' => $this->t('Max Width'),
       '#default_value' => $this->configuration['max_width'],
-      '#field_suffix' => ' ' . t('pixels'),
+      '#field_suffix' => ' ' . $this->t('pixels'),
     ];
 
     $form['max_sizes']['max_height'] = [
       '#type' => 'number',
-      '#title' => t('Max Height'),
+      '#title' => $this->t('Max Height'),
       '#default_value' => $this->configuration['max_height'],
-      '#field_suffix' => ' ' . t('pixels'),
+      '#field_suffix' => ' ' . $this->t('pixels'),
     ];
 
     $form['aspect_ratio'] = [
-      '#title' => t('Aspect Ratio'),
+      '#title' => $this->t('Aspect Ratio'),
       '#type' => 'textfield',
       '#default_value' => $this->configuration['aspect_ratio'],
       '#attributes' => ['placeholder' => 'W:H'],
-      '#description' => t('Set an aspect ratio <b>eg: 16:9</b> or leave this empty for arbitrary aspect ratio'),
+      '#description' => $this->t('Set an aspect ratio <b>eg: 16:9</b> or leave this empty for arbitrary aspect ratio'),
     ];
 
     return $form;

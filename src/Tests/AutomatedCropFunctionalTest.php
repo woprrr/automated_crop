@@ -38,7 +38,7 @@ class AutomatedCropFunctionalTest extends WebTestBase {
   protected function setUp() {
     parent::setUp();
 
-    $this->adminUser = $this->drupalCreateUser(['administer crop types', 'administer image styles']);
+    $this->adminUser = $this->drupalCreateUser(['administer image styles']);
 
     // Create test image style.
     $this->testStyle = $this->container->get('entity.manager')->getStorage('image_style')->create([
