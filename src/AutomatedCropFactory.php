@@ -150,8 +150,7 @@ class AutomatedCropFactory implements AutomatedCropInterface {
     // If Aspect ratio is enforced and match with format W:H.
     if ($aspect_ratio != 'NaN' && preg_match($this::ASPECT_RATIO_FORMAT_REGEXP, $aspect_ratio)) {
       $this->aspectRatio = $aspect_ratio;
-    }
-    else {
+    } else {
       $gcd = $this->calculateGcd($this->originalImageSizes['width'], $this->originalImageSizes['height']);
       $this->aspectRatio = round($this->originalImageSizes['width'] / $gcd) . ':' . round($this->originalImageSizes['height'] / $gcd);
     }
@@ -193,15 +192,12 @@ class AutomatedCropFactory implements AutomatedCropInterface {
     $height = $this->cropBox['height'];
 
     $ratio = explode(':', $this->getAspectRatio());
-    $has_sizes = $this->hasSizes();
-    if (!$has_sizes && !$this->hasHardSizes()) {
+    if (!$this->hasSizes() && !$this->hasHardSizes()) {
       $width = $this->originalImageSizes['width'];
       $height = round(($width * $ratio['1']) / $ratio['0']);
-    }
-    elseif ($has_sizes && $has_sizes === 'width') {
+    } elseif ($this->hasSizes() && $width) {
       $height = round(($width * $ratio['1']) / $ratio['0']);
-    }
-    elseif ($has_sizes && $has_sizes === 'height') {
+    } elseif ($this->hasSizes() && !empty($height)) {
       $width = round(($height * $ratio['0']) / $ratio['1']);
     }
 
@@ -291,15 +287,15 @@ class AutomatedCropFactory implements AutomatedCropInterface {
   /**
    * Evaluate if user have set one of crop box area sizes.
    *
-   * @return string|false
+   * @return bool
    *   Return if we have width OR height value completed or false.
    */
   public function hasSizes() {
     if (!empty($this->cropBox['width'])) {
-      return 'width';
+      return TRUE;
     }
     if (!empty($this->cropBox['height'])) {
-      return 'height';
+      return TRUE;
     }
     return FALSE;
   }
@@ -318,12 +314,10 @@ class AutomatedCropFactory implements AutomatedCropInterface {
   private static function calculateGcd($a, $b) {
     if (extension_loaded('gmp_gcd')) {
       $gcd = gmp_intval(gmp_gcd($a, $b));
-    }
-    else {
+    } else {
       if ($b > $a) {
         $gcd = self::calculateGcd($b, $a);
-      }
-      else {
+      } else {
         while ($b > 0) {
           $t = $b;
           $b = $a % $b;
