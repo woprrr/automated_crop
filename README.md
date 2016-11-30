@@ -1,4 +1,4 @@
-# Automated Crop module
+# Automated Crop module [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/woprrr/automated_crop/badges/quality-score.png?b=8.x-1.x)](https://scrutinizer-ci.com/g/woprrr/automated_crop/?branch=8.x-1.x)
 
 Provides an API for automatic cropping tools integration.
 
