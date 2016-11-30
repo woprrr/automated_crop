@@ -193,14 +193,15 @@ class AutomatedCropFactory implements AutomatedCropInterface {
     $height = $this->cropBox['height'];
 
     $ratio = explode(':', $this->getAspectRatio());
-    if (!$this->hasSizes() && !$this->hasHardSizes()) {
+    $has_sizes = $this->hasSizes();
+    if (!$has_sizes && !$this->hasHardSizes()) {
       $width = $this->originalImageSizes['width'];
       $height = round(($width * $ratio['1']) / $ratio['0']);
     }
-    elseif ($this->hasSizes() && !empty($width)) {
+    elseif ($has_sizes && $has_sizes === 'width') {
       $height = round(($width * $ratio['1']) / $ratio['0']);
     }
-    elseif ($this->hasSizes() && !empty($height)) {
+    elseif ($has_sizes && $has_sizes === 'height') {
       $width = round(($height * $ratio['0']) / $ratio['1']);
     }
 
@@ -290,11 +291,17 @@ class AutomatedCropFactory implements AutomatedCropInterface {
   /**
    * Evaluate if user have set one of crop box area sizes.
    *
-   * @return bool
-   *   Return if we have width OR height value completed.
+   * @return string|false
+   *   Return if we have width OR height value completed or false.
    */
   public function hasSizes() {
-    return (!empty($this->cropBox['width']) || !empty($this->cropBox['height'])) ? TRUE : FALSE;
+    if (!empty($this->cropBox['width'])) {
+      return 'width';
+    }
+    if (!empty($this->cropBox['height'])) {
+      return 'height';
+    }
+    return FALSE;
   }
 
   /**

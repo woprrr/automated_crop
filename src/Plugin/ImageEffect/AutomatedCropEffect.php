@@ -32,7 +32,7 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
   /**
    * Automated crop object loaded with current image.
    *
-   * @var \Drupal\automated_crop\AutomatedCropFactory
+   * @var \Drupal\automated_crop\AutomatedCropFactory|false
    */
   protected $automatedCrop;
 
@@ -224,7 +224,7 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
    *   Crop coordinates onto original image.
    */
   protected function getAutomatedCrop(ImageInterface $image) {
-    if (!isset($this->cropCoordinates)) {
+    if (!isset($this->automatedCrop)) {
       $this->automatedCrop = FALSE;
       if ($crop_coordinates = $this->automatedCropFactory->initCropBox($image, [
         'width' => $this->configuration['width'],

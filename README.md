@@ -1,4 +1,4 @@
-# Automated Crop module [![Build Status](https://travis-ci.org/woprrr/automated_crop.svg?branch=8.x-1.x)](https://travis-ci.org/drupal-media/crop) [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/woprrr/automated_crop/badges/quality-score.png?b=8.x-1.x)](https://scrutinizer-ci.com/g/woprrr/automated_crop/?branch=8.x-1.x)
+# Automated Crop module [![Build Status](https://travis-ci.org/woprrr/automated_crop.svg?branch=8.x-1.x)](https://travis-ci.org/drupal-media/crop) [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/woprrr/automated_crop/badges/quality-score.png?b=8.x-1.x)](https://scrutinizer-ci.com/g/woprrr/automated_crop/?branch=8.x-1.x) [![SensioLabsInsight](https://insight.sensiolabs.com/projects/d0cde56f-c807-4714-b6cf-38970e2985f9/mini.png)](https://insight.sensiolabs.com/projects/d0cde56f-c807-4714-b6cf-38970e2985f9)
 
 Provides an API for automatic cropping tools integration.
 
