@@ -72,16 +72,17 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
   public function applyEffect(ImageInterface $image) {
     /** @var \Drupal\automated_crop\AutomatedCropFactory $crop */
     if ($crop = $this->getAutomatedCrop($image)) {
-      $sizes = $crop->getCropBoxSizes();
-      $anchor = $crop->getAnchor();
-      if (!$image->crop($anchor['x'], $anchor['y'], $sizes['width'], $sizes['height'])) {
+      $anchor = $crop->anchor();
+      $size = $crop->size();
+
+      if (!$image->crop($anchor['x'], $anchor['y'], $size['width'], $size['height'])) {
         $this->logger->error('Automated image crop failed using the %toolkit toolkit on %path (%mimetype, %width x %height)', [
-          '%toolkit' => $image->getToolkitId(),
-          '%path' => $image->getSource(),
-          '%mimetype' => $image->getMimeType(),
-          '%width' => $image->getWidth(),
-          '%height' => $image->getHeight(),
-        ]
+            '%toolkit' => $image->getToolkitId(),
+            '%path' => $image->getSource(),
+            '%mimetype' => $image->getMimeType(),
+            '%width' => $image->getWidth(),
+            '%height' => $image->getHeight(),
+          ]
         );
         return FALSE;
       }
@@ -108,14 +109,14 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
    */
   public function defaultConfiguration() {
     return parent::defaultConfiguration() + [
-      'width' => NULL,
-      'height' => NULL,
-      'min_width' => NULL,
-      'min_height' => NULL,
-      'max_width' => NULL,
-      'max_height' => NULL,
-      'aspect_ratio' => 'NaN',
-    ];
+        'width' => NULL,
+        'height' => NULL,
+        'min_width' => NULL,
+        'min_height' => NULL,
+        'max_width' => NULL,
+        'max_height' => NULL,
+        'aspect_ratio' => 'NaN',
+      ];
   }
 
   /**

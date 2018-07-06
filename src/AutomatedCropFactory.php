@@ -192,13 +192,20 @@ class AutomatedCropFactory implements AutomatedCropInterface {
     $height = $this->cropBox['height'];
 
     $ratio = explode(':', $this->getAspectRatio());
+    $delta = $ratio['1'] / $ratio['0'];
     if (!$this->hasSizes() && !$this->hasHardSizes()) {
       $width = $this->originalImageSizes['width'];
-      $height = round(($width * $ratio['1']) / $ratio['0']);
+      $height = round(($width * $delta));
+      // If the calculated height exceeds the limit of the image we need,
+      // to crop width instead of height.
+      if ($height > $this->cropBox['max_height']) {
+        $height = $this->cropBox['max_height'];
+        $width = round(($width * $delta));
+      }
     } elseif ($this->hasSizes() && $width) {
-      $height = round(($width * $ratio['1']) / $ratio['0']);
+      $height = round(($width * $delta));
     } elseif ($this->hasSizes() && !empty($height)) {
-      $width = round(($height * $ratio['0']) / $ratio['1']);
+      $width = round(($height * $delta));
     }
 
     // Initialize auto crop area & unsure we can't exceed original image sizes.
@@ -250,7 +257,7 @@ class AutomatedCropFactory implements AutomatedCropInterface {
   /**
    * {@inheritdoc}
    */
-  public function getCropBoxSizes() {
+  public function size() {
     return [
       'width' => $this->cropBox['width'],
       'height' => $this->cropBox['height'],
@@ -267,7 +274,7 @@ class AutomatedCropFactory implements AutomatedCropInterface {
   /**
    * {@inheritdoc}
    */
-  public function getAnchor() {
+  public function anchor() {
     return [
       'x' => ($this->originalImageSizes['width'] / 2) - ($this->cropBox['width'] / 2),
       'y' => ($this->originalImageSizes['height'] / 2) - ($this->cropBox['height'] / 2),

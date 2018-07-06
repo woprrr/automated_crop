@@ -1,8 +1,8 @@
 name: Automated Crop
-description: 'Provides automated crop feature.'
+description: 'Provides automated crop features.'
 core: 8.x
 package: Media
 type: module
 dependencies:
-  - image
-  - user
+  - drupal:image
+  - drupal:user
