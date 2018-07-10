@@ -221,10 +221,10 @@ class AutomatedCropEffect extends ConfigurableImageEffectBase implements Contain
     parent::submitConfigurationForm($form, $form_state);
     $this->configuration['width'] = $form_state->getValue('width');
     $this->configuration['height'] = $form_state->getValue('height');
-    $this->configuration['min_width'] = $form_state->getValue('min_sizes');
-    $this->configuration['min_height'] = $form_state->getValue('min_sizes');
-    $this->configuration['max_width'] = $form_state->getValue('max_sizes');
-    $this->configuration['max_height'] = $form_state->getValue('max_sizes');
+    $this->configuration['min_width'] = $form_state->getValue('min_sizes')['min_width'];
+    $this->configuration['min_height'] = $form_state->getValue('min_sizes')['min_height'];
+    $this->configuration['max_width'] = $form_state->getValue('max_sizes')['max_width'];
+    $this->configuration['max_height'] = $form_state->getValue('max_sizes')['max_height'];
     $this->configuration['aspect_ratio'] = $form_state->getValue('aspect_ratio');
     $this->configuration['provider'] = $form_state->getValue('provider', 'native');
   }
