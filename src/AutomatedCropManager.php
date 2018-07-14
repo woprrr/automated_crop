@@ -10,15 +10,7 @@ use Drupal\Core\Plugin\DefaultPluginManager;
 /**
  * Manages EntityRoutingMap plugins.
  */
-class AutomatedCropManager extends DefaultPluginManager implements FallbackPluginManagerInterface
-{
-
-  /**
-   * Aspect ratio validation regexp.
-   *
-   * @var string
-   */
-  const ASPECT_RATIO_FORMAT_REGEXP = '/^\d{1,3}+:\d{1,3}+$/';
+class AutomatedCropManager extends DefaultPluginManager implements FallbackPluginManagerInterface {
 
   /**
    * Constructs a new AutomatedCropManager.
@@ -41,7 +33,7 @@ class AutomatedCropManager extends DefaultPluginManager implements FallbackPlugi
    * {@inheritdoc}
    */
   public function getFallbackPluginId($plugin_id, array $configuration = []) {
-    return 'native';
+    return 'automated_crop_default';
   }
 
   /**
@@ -59,4 +51,5 @@ class AutomatedCropManager extends DefaultPluginManager implements FallbackPlugi
 
     return $options;
   }
+
 }

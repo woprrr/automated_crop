@@ -11,8 +11,7 @@ use Drupal\Component\Annotation\Plugin;
  *
  * @Annotation
  */
-class AutomatedCrop extends Plugin
-{
+class AutomatedCrop extends Plugin {
 
   /**
    * The plugin ID.
@@ -38,4 +37,5 @@ class AutomatedCrop extends Plugin
    * @ingroup plugin_translatable
    */
   public $description;
+
 }

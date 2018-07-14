@@ -8,12 +8,18 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
- * Xxxxx.
+ * Provides a base class for each AutomatedCrop provider plugins.
  */
-abstract class AbstractAutomatedCrop extends PluginBase implements AutomatedCropInterface, ContainerFactoryPluginInterface
-{
+abstract class AbstractAutomatedCrop extends PluginBase implements AutomatedCropInterface, ContainerFactoryPluginInterface {
 
   use StringTranslationTrait;
+
+  /**
+   * Aspect ratio validation regexp.
+   *
+   * @var string
+   */
+  const ASPECT_RATIO_FORMAT_REGEXP = '/^\d{1,3}+:\d{1,3}+$/';
 
   /**
    * Plugin label.
@@ -25,7 +31,7 @@ abstract class AbstractAutomatedCrop extends PluginBase implements AutomatedCrop
   /**
    * The entity type manager service.
    *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface;
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityTypeManager;
 
@@ -63,19 +69,32 @@ abstract class AbstractAutomatedCrop extends PluginBase implements AutomatedCrop
   /**
    * The image object to crop.
    *
-   * @var \Drupal\Core\Image\ImageInterface;
+   * @var \Drupal\Core\Image\ImageInterface
    */
   protected $image;
 
   /**
    * The percentage of automatic cropping area when initializes.
    *
-   * @var integer|float
+   * @var int|float
    */
   protected $autoCropArea = 1;
 
   /**
-   * Constructs display plugin.
+   * The delta obtained by dividing the height by width.
+   *
+   * This delta are mandatory to process enlargement/reduction without ratio,
+   * destruction. If the aspect ratio are defined the delta are based on your,
+   * given ratio, if not we calculate the GCD of your originalImage and,
+   * calculate, the ratio. This you can obtained same result by the following,
+   * calculation `(original height / original width) x new width = new height`.
+   *
+   * @var int|float
+   */
+  protected $delta;
+
+  /**
+   * Constructs AutomatedCrop plugin.
    *
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
@@ -102,25 +121,44 @@ abstract class AbstractAutomatedCrop extends PluginBase implements AutomatedCrop
     );
   }
 
-
+  /**
+   * Calculation of the dimensions of the crop area.
+   *
+   * This method allow you to define a specific logic to calculate,
+   * the sizes of crop area.
+   *
+   * @return self
+   *   AutomatedCrop plugin with cropBox set.
+   *
+   * @see \Drupal\automated_crop\Plugin\AutomatedCrop\AutomatedCropDefault
+   */
   abstract public function calculateCropBoxSize();
 
+  /**
+   * Calculation of the coordinates of the crop area.
+   *
+   * This method allow you to define a specific logic to calculate,
+   * the position of the top left corner of crop area.
+   *
+   * @return self
+   *   AutomatedCrop plugin with the coordinates set.
+   *
+   * @see \Drupal\automated_crop\Plugin\AutomatedCrop\AutomatedCropDefault
+   */
   abstract public function calculateCropBoxCoordinates();
 
   /**
-   * Initialize needed crop box onto image.
+   * Initializes the properties of the plugins according to the configurations.
    *
-   * @param array $sizes
-   *   Size of crop area provide by effect configuration.
-   *
-   * @return \Drupal\automated_crop\AutomatedCropFactory
-   *   AutomatedCrop object this is being called on.
+   * @return self
+   *   AutomatedCrop plugin initialized.
    */
   public function initCropBox() {
     $this->setImage($this->configuration['image']);
     $this->setCropBoxProperties();
     $this->setOriginalSize();
     $this->setAspectRatio();
+    $this->setDelta();
 
     return $this;
   }
@@ -130,21 +168,6 @@ abstract class AbstractAutomatedCrop extends PluginBase implements AutomatedCrop
    */
   public function label() {
     return $this->label;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setMaxSizes($max_width, $max_height) {
-    if (!empty($max_width)) {
-      $this->cropBox['max_width'] = $max_width;
-    }
-
-    if (!empty($max_height)) {
-      $this->cropBox['max_height'] = $max_height;
-    }
-
-    return $this;
   }
 
   /**
@@ -190,7 +213,7 @@ abstract class AbstractAutomatedCrop extends PluginBase implements AutomatedCrop
    */
   public function setAspectRatio() {
     $aspect_ratio = isset($this->configuration['aspect_ratio']) ? $this->configuration['aspect_ratio'] : 'NaN';
-    if ('NaN' !== $aspect_ratio && preg_match(AutomatedCropManager::ASPECT_RATIO_FORMAT_REGEXP, $aspect_ratio)) {
+    if ('NaN' !== $aspect_ratio && preg_match(self::ASPECT_RATIO_FORMAT_REGEXP, $aspect_ratio)) {
       $this->aspectRatio = $aspect_ratio;
       return $this;
     }
@@ -204,6 +227,23 @@ abstract class AbstractAutomatedCrop extends PluginBase implements AutomatedCrop
   /**
    * {@inheritdoc}
    */
+  public function setDelta() {
+    $ratio = explode(':', $this->getAspectRatio());
+    $this->delta = (int) $ratio['1'] / (int) $ratio['0'];
+
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDelta() {
+    return $this->delta;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getAspectRatio() {
     return $this->aspectRatio;
   }
@@ -211,17 +251,8 @@ abstract class AbstractAutomatedCrop extends PluginBase implements AutomatedCrop
   /**
    * {@inheritdoc}
    */
-  public function setAnchor(array $coordinates) {
-    return array_merge($coordinates, $this->cropBox);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setCropBoxSize($width, $height) {
-    // The width & height of auto crop area must large than min sizes.
-    $this->cropBox['width'] = max($this->cropBox['min_width'], $width * $this->autoCropArea);
-    $this->cropBox['height'] = max($this->cropBox['min_height'], $height * $this->autoCropArea);
+  public function setAnchor(array $coordinates = []) {
+    array_merge($coordinates, $this->cropBox);
 
     return $this;
   }
@@ -247,86 +278,26 @@ abstract class AbstractAutomatedCrop extends PluginBase implements AutomatedCrop
   }
 
   /**
-   * Evaluate if crop box has Hard sizes defined.
-   *
-   * @return bool
-   *   Return if we have width AND height value completed.
+   * {@inheritdoc}
    */
-  public function hasHardSizes() {
-    return (!empty($this->cropBox['width']) && !empty($this->cropBox['height'])) ? TRUE : FALSE;
-  }
-
-  /**
-   * Evaluate if user have set one of crop box area sizes.
-   *
-   * @return bool
-   *   Return if we have width OR height value completed or false.
-   */
-  public function hasSizes() {
-    if (!empty($this->cropBox['width'])) {
-      return TRUE;
+  public function setMaxSizes($maxWidth, $maxHeight) {
+    if (!empty($maxWidth)) {
+      $this->cropBox['max_width'] = $maxWidth;
     }
 
-    if (!empty($this->cropBox['height'])) {
-      return TRUE;
+    if (!empty($maxHeight)) {
+      $this->cropBox['max_height'] = $maxHeight;
     }
-
-    return FALSE;
-  }
-
-  /**
-   * Define the percentage of automatic cropping area when initializes.
-   *
-   * @param int|float $num
-   *   The percentage of automatic cropping area.
-   *
-   * @return self
-   *   AutomatedCrop object this is being called on.
-   */
-  public function setAutoCropArea($num) {
-    $this->autoCropArea = $num;
 
     return $this;
   }
 
   /**
-   * Calculate the greatest common denominator of two numbers.
-   *
-   * @param int $a
-   *   First number to check.
-   * @param int $b
-   *   Second number to check.
-   *
-   * @return int|null
-   *   Greatest common denominator of $a and $b.
+   * {@inheritdoc}
    */
-  protected static function calculateGcd($a, $b) {
-    if ($b > $a) {
-      $gcd = self::calculateGcd($b, $a);
-    }
-    else {
-      while ($b > 0) {
-        $t = $b;
-        $b = $a % $b;
-        $a = $t;
-      }
-      $gcd = $a;
-    }
-    return $gcd;
-  }
-
-  /**
-   * Set all crop box sizes value entered by plugin configuration.
-   *
-   * @return self
-   *   AutomatedCrop object this is being called on.
-   */
-  protected function setCropBoxProperties() {
-    foreach ($this->configuration as $element => $value) {
-      if (array_key_exists($element, $this->cropBox) && !empty($value)) {
-        $this->cropBox[$element] = (int) $value;
-      }
-    }
+  public function setCropBoxSize(int $width, int $height) {
+    $this->cropBox['width'] = max($this->cropBox['min_width'], $width * $this->autoCropArea);
+    $this->cropBox['height'] = max($this->cropBox['min_height'], $height * $this->autoCropArea);
 
     return $this;
   }
@@ -359,6 +330,85 @@ abstract class AbstractAutomatedCrop extends PluginBase implements AutomatedCrop
    */
   public function getConfiguration() {
     return $this->configuration;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setAutoCropArea($num) {
+    $this->autoCropArea = $num;
+
+    return $this;
+  }
+
+  /**
+   * Evaluate if crop box has Hard sizes defined.
+   *
+   * @return bool
+   *   Return if we have width AND height value completed.
+   */
+  public function hasHardSizes() {
+    return (!empty($this->cropBox['width']) && !empty($this->cropBox['height'])) ? TRUE : FALSE;
+  }
+
+  /**
+   * Evaluate if user have set one of crop box area sizes.
+   *
+   * @return bool
+   *   Return if we have width OR height value completed or false.
+   */
+  public function hasSizes() {
+    if (!empty($this->cropBox['width'])) {
+      return TRUE;
+    }
+
+    if (!empty($this->cropBox['height'])) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+  /**
+   * Calculate the greatest common denominator of two numbers.
+   *
+   * @param int $a
+   *   First number to check.
+   * @param int $b
+   *   Second number to check.
+   *
+   * @return int|null
+   *   Greatest common denominator of $a and $b.
+   */
+  protected static function calculateGcd($a, $b) {
+    if ($b > $a) {
+      $gcd = self::calculateGcd($b, $a);
+    }
+    else {
+      while ($b > 0) {
+        $t = $b;
+        $b = $a % $b;
+        $a = $t;
+      }
+      $gcd = $a;
+    }
+    return $gcd;
+  }
+
+  /**
+   * Set all crop box properties from plugin configuration.
+   *
+   * @return self
+   *   AutomatedCrop plugin object.
+   */
+  protected function setCropBoxProperties() {
+    foreach ($this->configuration as $element => $value) {
+      if (array_key_exists($element, $this->cropBox) && !empty($value)) {
+        $this->cropBox[$element] = (int) $value;
+      }
+    }
+
+    return $this;
   }
 
 }
