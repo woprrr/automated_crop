@@ -3,12 +3,12 @@
 namespace Drupal\automated_crop;
 
 use Drupal\Component\Plugin\PluginInspectionInterface;
-use Drupal\Component\Plugin\ConfigurablePluginInterface;
+use Drupal\Component\Plugin\DependentPluginInterface;
 
 /**
  * Provides an interface defining the AutomatedCrop plugin objects.
  */
-interface AutomatedCropInterface extends PluginInspectionInterface, ConfigurablePluginInterface {
+interface AutomatedCropInterface extends PluginInspectionInterface, DependentPluginInterface {
 
   /**
    * Returns the display label.
