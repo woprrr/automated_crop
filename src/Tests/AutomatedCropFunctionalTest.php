@@ -2,14 +2,14 @@
 
 namespace Drupal\automated_crop\Tests;
 
-use Drupal\simpletest\WebTestBase;
+use Drupal\Tests\BrowserTestBase;
 
 /**
  * Functional tests for Automated Crop.
  *
  * @group crop
  */
-class AutomatedCropFunctionalTest extends WebTestBase {
+class AutomatedCropFunctionalTest extends BrowserTestBase {
 
   /**
    * Modules to enable.
@@ -41,7 +41,7 @@ class AutomatedCropFunctionalTest extends WebTestBase {
     $this->adminUser = $this->drupalCreateUser(['administer image styles']);
 
     // Create test image style.
-    $this->testStyle = $this->container->get('entity.manager')->getStorage('image_style')->create([
+    $this->testStyle = $this->container->get('entity_field.manager')->getStorage('image_style')->create([
       'name' => 'test',
       'label' => 'Test image style',
       'effects' => [],
